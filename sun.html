@@ -1,0 +1,231 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Survival Sun Navigator</title>
+    <style>
+        {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* full-screen background (behind the rounded card) */
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #111; /* fallback color */
+            font-family: "Segoe UI", Roboto, Arial, sans-serif;
+            padding: 24px;
+        }
+
+        /* background image container so we can apply radius to the whole app */
+        .app-card {
+            width: 100%;
+            max-width: 900px;
+            border-radius: 24px; /* main rounded radius */
+            overflow: hidden; /* keep children inside radius */
+            box-shadow: 0 20px 60px rgba(0,0,0,0.55);
+            position: relative;
+            background: linear-gradient(rgba(0,0,0,0.30), rgba(0,0,0,0.30));
+        }
+
+            /* background image layer (covers the card, supports radius) */
+            .app-card::before {
+                content: "";
+                position: absolute;
+                inset: 0;
+                background-image: url("sunbg.jpeg"); /* put sunbg.jpeg in same folder */
+                background-size: cover;
+                background-position: center;
+                filter: saturate(1.05) contrast(1.02);
+                z-index: 0;
+                transform: scale(1.01); /* slight scale to hide edges */
+            }
+
+        /* inner content sits above the background */
+        .app-content {
+            position: relative;
+            z-index: 1;
+            padding: 36px;
+            color: #fff;
+            backdrop-filter: none;
+        }
+
+        /* heading styling — gold color with soft shade */
+        h1 {
+            font-size: 2.15rem;
+            line-height: 1.05;
+            color: #ffd973; /* gold */
+            text-shadow: 0 1px 0 rgba(0,0,0,0.35), 0 6px 16px rgba(0,0,0,0.55), 0 2px 6px rgba(255,217,115,0.15);
+            margin-bottom: 8px;
+        }
+
+        /* small caption under the heading */
+        .caption {
+            color: rgba(255,255,255,0.92);
+            font-size: 0.95rem;
+            margin-bottom: 20px;
+            max-width: 820px;
+        }
+
+            .caption small {
+                display: block;
+                margin-top: 8px;
+                font-size: 0.85rem;
+                color: rgba(255,255,255,0.85);
+                opacity: 0.95;
+            }
+
+        /* example info box */
+        .info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-bottom: 22px;
+        }
+
+            .info .tile {
+                background: rgba(0,0,0,0.28);
+                padding: 14px;
+                border-radius: 12px;
+                border: 1px solid rgba(255,255,255,0.06);
+                color: #fff;
+                min-height: 64px;
+            }
+
+        .tile strong {
+            display: block;
+            font-size: .85rem;
+            opacity: .9;
+            margin-bottom: 6px;
+        }
+
+        .tile span {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        /* the big pill button you requested */
+        .cta {
+            display: inline-block;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 14px 34px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #ffffff; /* white text */
+            background: linear-gradient(180deg, #1e90ff 0%, #0066d6 100%); /* blue */
+            border-radius: 9999px; /* max border-radius (pill) */
+            box-shadow: 0 6px 30px rgba(0, 110, 255, 0.30), /* deep blue soft glow */
+            inset 0 -4px 10px rgba(0,0,0,0.15);
+            transition: transform 120ms ease, box-shadow 120ms ease;
+            text-transform: none;
+            letter-spacing: .2px;
+        }
+
+            .cta:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 14px 40px rgba(0,110,255,0.35);
+            }
+
+            .cta:active {
+                transform: translateY(0);
+                box-shadow: 0 8px 22px rgba(0,110,255,0.28);
+            }
+
+        /* small helper footer/copyright */
+        .foot {
+            margin-top: 18px;
+            color: rgba(255,255,255,0.8);
+            font-size: .85rem;
+        }
+
+        /* responsive */
+        @media (max-width: 640px) {
+            .app-content {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.55rem;
+            }
+
+            .info {
+                grid-template-columns: 1fr;
+            }
+
+            .cta {
+                width: 100%;
+                padding: 14px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🌞 Survival Sun Navigator (Offline)</h1>
+
+    <p>Enter Latitude:</p>
+    <input id="lat" placeholder="e.g., 17.4 for Hyderabad">
+
+    <p>Enter Date:</p>
+    <input id="date" type="date">
+
+    <p>Enter Time:</p>
+    <input id="time" type="time">
+
+    <button onclick="calculateSun()">Calculate</button>
+
+    <h2 id="result"></h2>
+
+    <script>
+function calculateSun() {
+    let lat = parseFloat(document.getElementById("lat").value);
+    let date = new Date(document.getElementById("date").value);
+    let timeStr = document.getElementById("time").value;
+
+    let [hour, minute] = timeStr.split(":").map(Number);
+    let time = hour + (minute / 60);
+
+    // Day of year
+    let start = new Date(date.getFullYear(), 0, 0);
+    let diff = date - start;
+    let dayOfYear = Math.floor(diff / 86400000);
+
+    // Declination δ
+    let decl = 23.45 * Math.sin((360/365 * (284 + dayOfYear)) * Math.PI/180);
+
+    // Hour angle H
+    let H = 15 * (time - 12);
+
+    // Convert to radians
+    latR = lat * Math.PI/180;
+    declR = decl * Math.PI/180;
+    HR = H * Math.PI/180;
+
+    // Altitude
+    let altitude = Math.asin(
+        Math.sin(latR)*Math.sin(declR) +
+        Math.cos(latR)*Math.cos(declR)*Math.cos(HR)
+    ) * 180/Math.PI;
+
+    // Azimuth
+    let azimuth = Math.acos(
+        (Math.sin(altitude*Math.PI/180)*Math.sin(latR) - Math.sin(declR)) /
+        (Math.cos(altitude*Math.PI/180)*Math.cos(latR))
+    ) * 180/Math.PI;
+
+    // Interpretation
+    let direction = (H > 0) ? "West" : "East";
+
+    document.getElementById("result").innerHTML =
+        "Altitude: " + altitude.toFixed(2) + "°<br>" +
+        "Azimuth: " + azimuth.toFixed(2) + "° (" + direction + ")";
+}
+    </script>
+
+</body>
+</html>
